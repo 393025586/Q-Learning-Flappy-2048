@@ -39,17 +39,32 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
   var zonesize = this.gridContainer.clientHeight;
   var morepos = 0.75 * (metadata.score - Math.floor(metadata.score));
 
-  this.birdobj.style.top = metadata.birdpos * zonesize + "px";
+  // Calculate game state here
+  var state = {};
 
-  this.blockobja.style.top = [0.5 , 0   , 0   ][metadata.ab] * zonesize + "px";
-  this.blockobjb.style.top = [0.75, 0.75, 0.25][metadata.ab] * zonesize + "px";
-  this.blockobjc.style.top = [0.5 , 0   , 0   ][metadata.cd] * zonesize + "px";
-  this.blockobjd.style.top = [0.75, 0.75, 0.25][metadata.cd] * zonesize + "px";
+  state.size = zonesize / 4;
+  state.birdtop = metadata.birdpos * zonesize;
+  this.birdobj.style.top = state.birdtop + "px";
 
-  this.blockobja.style.left = (0.5  - morepos) * zonesize + "px";
-  this.blockobjb.style.left = (0.5  - morepos) * zonesize + "px";
-  this.blockobjc.style.left = (1.25 - morepos) * zonesize + "px";
-  this.blockobjd.style.left = (1.25 - morepos) * zonesize + "px";
+  // 0: all down, 1: split, 2: all up
+  state.abceiling = [0, 0.25, 0.5][metadata.ab] * zonesize;
+  state.cdceiling = [0, 0.25, 0.5][metadata.cd] * zonesize;
+
+  state.atop = [0.5 , 0   , 0   ][metadata.ab] * zonesize;
+  state.btop = [0.75, 0.75, 0.25][metadata.ab] * zonesize;
+  state.ctop = [0.5 , 0   , 0   ][metadata.cd] * zonesize;
+  state.dtop = [0.75, 0.75, 0.25][metadata.cd] * zonesize;
+  this.blockobja.style.top = state.atop + "px";
+  this.blockobjb.style.top = state.btop + "px";
+  this.blockobjc.style.top = state.ctop + "px";
+  this.blockobjd.style.top = state.dtop + "px";
+
+  state.ableft = (0.5  - morepos) * zonesize;
+  state.cdleft = (1.25 - morepos) * zonesize;
+  this.blockobja.style.left = state.ableft + "px";
+  this.blockobjb.style.left = state.ableft + "px";
+  this.blockobjc.style.left = state.cdleft + "px";
+  this.blockobjd.style.left = state.cdleft + "px";
 
   this.birdinn.textContent = Math.floor(metadata.score);
 
@@ -57,8 +72,10 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
     self.updateScore(Math.floor(metadata.score));
     self.updateBestScore(Math.floor(metadata.bestScore));
   });
+
+  state.score = Math.floor(metadata.score);
   // Call AI
-  window.AI.play(this);
+  window.AI.play(this.game, state);
 };
 
 // Continues the game (both restart and keep playing)
