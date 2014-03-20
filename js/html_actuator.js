@@ -57,6 +57,8 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
     self.updateScore(Math.floor(metadata.score));
     self.updateBestScore(Math.floor(metadata.bestScore));
   });
+  // Call AI
+  window.AI.play(this);
 };
 
 // Continues the game (both restart and keep playing)
