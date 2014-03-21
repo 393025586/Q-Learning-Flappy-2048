@@ -3,7 +3,13 @@
   var AI;
 
   AI = (function() {
-    function AI() {}
+    function AI(live_reward, dead_reward, gamma) {
+      this.live_reward = live_reward != null ? live_reward : 1;
+      this.dead_reward = dead_reward != null ? dead_reward : -100;
+      this.gamma = gamma != null ? gamma : 0.8;
+      this.Q = {};
+      this.dead_already = false;
+    }
 
     AI.prototype.getAiState = function(state) {
       var ab, cd, dead;
@@ -22,15 +28,77 @@
       return [ab, state.birdtop - state.cdceiling, dead];
     };
 
-    AI.prototype.play = function(game, state) {
-      var ai_state;
+    AI.prototype.scaleDown = function(ai_state, step) {
+      var S, s, _i, _len;
+      S = [];
+      for (_i = 0, _len = ai_state.length; _i < _len; _i++) {
+        s = ai_state[_i];
+        S.push(Math.floor(s / step));
+      }
+      return S;
+    };
+
+    AI.prototype.initQ = function(s) {
+      if (this.Q[s[0]] == null) {
+        this.Q[s[0]] = {};
+      }
+      if (this.Q[s[0]][s[1]] == null) {
+        this.Q[s[0]][s[1]] = {
+          jump: (s[1] < 0 ? -100 : 0),
+          idle: 0
+        };
+      }
+      return this.Q[s[0]][s[1]];
+    };
+
+    AI.prototype.writeQ = function(s, a, r) {
+      return this.initQ(s)[a] = r;
+    };
+
+    AI.prototype.readQ = function(s) {
+      return this.initQ(s);
+    };
+
+    AI.prototype.play = function(game, state, ui) {
+      var action_source, ai_state, r, rewards_for_actions, s;
       this.game = game;
       this.state = state;
-      if (Math.random() > 0.95) {
-        this.game.jump();
-      }
+      this.ui = ui;
       ai_state = this.getAiState(this.state);
-      return console.log(ai_state);
+      s = this.scaleDown(ai_state.slice(0, 2), 10);
+      this.ui.state.textContent = "(" + s[0] + ", " + s[1] + ") Dead: " + ai_state[2];
+      r = this.live_reward;
+      if (ai_state[2]) {
+        if (!this.dead_already) {
+          r = this.dead_reward;
+          this.dead_already = true;
+        }
+      } else if (this.dead_already) {
+        this.dead_already = false;
+      }
+      this.ui.reward.textContent = "" + r;
+      rewards_for_actions = this.readQ(s);
+      this.ui.qs.textContent = "Jump: " + rewards_for_actions.jump + ", Idle: " + rewards_for_actions.idle;
+      if ((this.last_s != null) && (this.last_a != null)) {
+        this.writeQ(this.last_s, this.last_a, r + this.gamma * Math.max(rewards_for_actions.jump, rewards_for_actions.idle));
+      }
+      action_source = "Q";
+      if (rewards_for_actions.jump > rewards_for_actions.idle) {
+        this.game.jump();
+        this.last_a = "jump";
+      } else if (rewards_for_actions.jump === rewards_for_actions.idle) {
+        action_source = "R";
+        if (Math.random() > 0.95) {
+          this.game.jump();
+          this.last_a = "jump";
+        } else {
+          this.last_a = "idle";
+        }
+      } else {
+        this.last_a = "idle";
+      }
+      this.ui.action.textContent = "" + this.last_a + "(" + action_source + ")";
+      return this.last_s = s;
     };
 
     return AI;

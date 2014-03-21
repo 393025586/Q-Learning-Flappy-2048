@@ -14,6 +14,11 @@ function HTMLActuator() {
   this.blockinnb        = document.querySelector(".tile-block-b .tile-inner");
   this.blockinnc        = document.querySelector(".tile-block-c .tile-inner");
   this.blockinnd        = document.querySelector(".tile-block-d .tile-inner");
+  this.aistate          = document.querySelector("#state");
+  this.aireward         = document.querySelector("#reward");
+  this.aiaction         = document.querySelector("#action");
+  this.aiqs             = document.querySelector("#q-s");
+  this.debug            = {state: this.aistate, reward: this.aireward, action: this.aiaction, qs: this.aiqs};
 }
 
 HTMLActuator.prototype.actuate = function (grid, metadata) {
@@ -75,7 +80,7 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 
   state.score = Math.floor(metadata.score);
   // Call AI
-  window.AI.play(this.game, state);
+  window.AI.play(this.game, state, this.debug);
 };
 
 // Continues the game (both restart and keep playing)
