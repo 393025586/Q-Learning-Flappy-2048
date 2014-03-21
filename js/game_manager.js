@@ -262,7 +262,8 @@ GameManager.prototype.timer = function () {
     this.cd = Math.floor(Math.random() * 3);
   }
 
-  setTimeout(function () {self.timer();}, 384 / Math.sqrt(this.score + 256));
+  setTimeout(function () {self.timer();}, 0.01);//384 / Math.sqrt(this.score + 256));
+  //setTimeout(function () {self.timer();}, 384 / Math.sqrt(this.score + 256));
   this.actuate();
 }
 

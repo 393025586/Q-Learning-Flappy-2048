@@ -3,10 +3,12 @@
   var AI;
 
   AI = (function() {
-    function AI(live_reward, dead_reward, gamma) {
+    function AI(live_reward, dead_reward, alpha, gamma, scale) {
       this.live_reward = live_reward != null ? live_reward : 1;
-      this.dead_reward = dead_reward != null ? dead_reward : -100;
+      this.dead_reward = dead_reward != null ? dead_reward : -1000;
+      this.alpha = alpha != null ? alpha : 0.5;
       this.gamma = gamma != null ? gamma : 0.8;
+      this.scale = scale != null ? scale : 0.1;
       this.Q = {};
       this.dead_already = false;
     }
@@ -39,13 +41,15 @@
     };
 
     AI.prototype.initQ = function(s) {
+      var scaled_bird_height;
+      scaled_bird_height = this.state.size / this.scale;
       if (this.Q[s[0]] == null) {
         this.Q[s[0]] = {};
       }
       if (this.Q[s[0]][s[1]] == null) {
         this.Q[s[0]][s[1]] = {
-          jump: (s[1] < 0 ? -100 : 0),
-          idle: 0
+          jump: (s[1] < scaled_bird_height ? -100 : 0),
+          idle: (s[1] > scaled_bird_height ? -5 : 0)
         };
       }
       return this.Q[s[0]][s[1]];
@@ -60,12 +64,12 @@
     };
 
     AI.prototype.play = function(game, state, ui) {
-      var action_source, ai_state, r, rewards_for_actions, s;
+      var action_source, ai_state, est_future, old, r, rewards_for_actions, s;
       this.game = game;
       this.state = state;
       this.ui = ui;
       ai_state = this.getAiState(this.state);
-      s = this.scaleDown(ai_state.slice(0, 2), 10);
+      s = this.scaleDown(ai_state.slice(0, 2), this.scale);
       this.ui.state.textContent = "(" + s[0] + ", " + s[1] + ") Dead: " + ai_state[2];
       r = this.live_reward;
       if (ai_state[2]) {
@@ -80,7 +84,9 @@
       rewards_for_actions = this.readQ(s);
       this.ui.qs.textContent = "Jump: " + rewards_for_actions.jump + ", Idle: " + rewards_for_actions.idle;
       if ((this.last_s != null) && (this.last_a != null)) {
-        this.writeQ(this.last_s, this.last_a, r + this.gamma * Math.max(rewards_for_actions.jump, rewards_for_actions.idle));
+        old = this.readQ(this.last_s)[this.last_a];
+        est_future = Math.max(rewards_for_actions.jump, rewards_for_actions.idle);
+        this.writeQ(this.last_s, this.last_a, old + this.alpha * (r + this.gamma * est_future - old));
       }
       action_source = "Q";
       if (rewards_for_actions.jump > rewards_for_actions.idle) {
